@@ -20,7 +20,7 @@ class Comment_model extends Emerald_Model {
     /** @var int */
     protected $user_id;
     /** @var int */
-    protected $assing_id;
+    protected $assign_id;
     /** @var string */
     protected $text;
     /** @var int */
@@ -59,9 +59,9 @@ class Comment_model extends Emerald_Model {
     /**
      * @return int
      */
-    public function get_assing_id(): int
+    public function get_assign_id(): int
     {
-        return $this->assing_id;
+        return $this->assign_id;
     }
 
     /**
@@ -153,9 +153,9 @@ class Comment_model extends Emerald_Model {
     }
 
     /**
-     * @return Int
+     * @return Int|Null
      */
-    public function get_reply_id(): int
+    public function get_reply_id(): ?int
     {
         return $this->reply_id;
     }
@@ -237,6 +237,7 @@ class Comment_model extends Emerald_Model {
         return static::transform_many(App::get_s()->from(self::CLASS_TABLE)->where(['assign_id' => $assign_id])->orderBy('time_created', 'ASC')->many());
     }
 
+
     /**
      * @param User_model $user
      *
@@ -245,12 +246,23 @@ class Comment_model extends Emerald_Model {
      */
     public function increment_likes(User_model $user): bool
     {
-        //TODO
+        $this->likes += 1;
+        return $this->save('likes', $this->likes);
     }
 
     public static function get_all_by_replay_id(int $reply_id)
     {
         //TODO
+    }
+
+    /**
+     * @param $post_id
+     *
+     * @return Post_model
+     */
+    public static function get_one_by_id($post_id):Comment_model
+    {
+        return static::transform_one(App::get_s()->from(self::CLASS_TABLE)->where('id', $post_id)->one());
     }
 
     /**
@@ -285,6 +297,7 @@ class Comment_model extends Emerald_Model {
         $o->user = User_model::preparation($data->get_user(), 'main_page');
 
         $o->likes = $data->get_likes();
+        $o->reply_id = $data->get_reply_id();
 
         $o->time_created = $data->get_time_created();
         $o->time_updated = $data->get_time_updated();

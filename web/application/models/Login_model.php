@@ -20,14 +20,23 @@ class Login_model extends CI_Model {
     }
 
     /**
+     * @param $post
+     *
      * @return User_model
      * @throws Exception
      */
-    public static function login(): User_model
+    public static function login($post): User_model
     {
-        //TODO
+        $user = User_model::find_user_by_email($post['login']);
 
-        self::start_session();
+        if($user->get_password()!=$post['password'])
+        {
+            throw new Exception('Password invalid!');
+        }
+
+        self::start_session($user->get_id());
+
+        return $user;
     }
 
     public static function start_session(int $user_id)

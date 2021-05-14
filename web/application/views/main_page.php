@@ -15,6 +15,35 @@ use Model\User_model;
         integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <link rel="stylesheet" href="/css/app.css?v=<?= filemtime(FCPATH . '/css/app.css') ?>">
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- item comment-template -->
+    <script type="text/x-template" id="comment-template">
+        <li >
+            {{ item.user.personaname + ' - '}}
+            <small class="text-muted">{{item.text}}</small>
+            <a role="button" @click="addLike('comment', item.id)">
+                <svg class="bi bi-heart-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" clip-rule="evenodd"/>
+                </svg>
+                <span v-if="!likes">{{ item.likes }}</span>
+                <span v-else>{{ likes }}</span>
+            </a>
+            <a @click="enableReplayForm()">Replay</a>
+            <form class="form-inline" v-if="replayForm">
+                <div class="form-group">
+                    <input type="text" class="form-control" id="addReplay" v-model="commentText">
+                </div>
+                <button type="button" class="btn btn-primary" @click="addComment()">Add comment</button>
+            </form>
+            <ul>
+                <tre-comment
+                        class="item"
+                        v-for="(child, index) in item.children"
+                        :key="index"
+                        :item="child"
+                ></tre-comment>
+            </ul>
+        </li>
+    </script>
 </head>
 <body>
 <div id="app">
@@ -26,29 +55,30 @@ use Model\User_model;
       </button>
       <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
         <li class="nav-item">
-            <? if (User_model::is_logged()) {?>
+
+            <?php if (User_model::is_logged()) {?>
               <a href="/main_page/logout" class="btn btn-primary my-2 my-sm-0"
                  data-target="#loginModal">Log out, <?= $user->personaname?>
               </a>
-            <? } else {?>
+            <?php } else {?>
               <button type="button" class="btn btn-success my-2 my-sm-0" type="submit" data-toggle="modal"
                       data-target="#loginModal">Log IN
               </button>
-            <? } ?>
+            <?php } ?>
         </li>
         <li class="nav-item">
-            <?  if (User_model::is_logged()) {?>
+            <?php  if (User_model::is_logged()) {?>
               <button type="button" class="btn btn-success my-2 my-sm-0" type="submit" data-toggle="modal"
                       data-target="#addModal">Add balance
               </button>
-            <? }?>
+            <?php }?>
         </li>
         <li class="nav-item">
-            <?  if (User_model::is_logged()) {?>
+            <?php  if (User_model::is_logged()) {?>
                 <a href="" role="button">
                     Likes:
                 </a>
-            <? }?>
+            <?php }?>
         </li>
       </div>
 <!--      <div class="collapse navbar-collapse" id="navbarTogglerDemo01">-->
@@ -172,7 +202,7 @@ use Model\User_model;
             <div class="post-img" v-bind:style="{ backgroundImage: 'url(' + post.img + ')' }"></div>
             <div class="card-body">
               <div class="likes" @click="addLike('post', post.id)">
-                <div class="heart-wrap" v-if="!likes">
+                <div class="heart-wrap" v-if="!post_likes">
                   <div class="heart">
                     <svg class="bi bi-heart" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path fill-rule="evenodd" d="M8 2.748l-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 01.176-.17C12.72-3.042 23.333 4.867 8 15z" clip-rule="evenodd"/>
@@ -186,19 +216,15 @@ use Model\User_model;
                       <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" clip-rule="evenodd"/>
                     </svg>
                   </div>
-                  <span>{{likes}}</span>
+                  <span>{{post_likes}}</span>
                 </div>
               </div>
-              <p class="card-text" v-for="comment in post.coments">
-                  {{comment.user.personaname + ' - '}}
-                  <small class="text-muted">{{comment.text}}</small>
-                  <a role="button" @click="addLike('comment', comment.id)">
-                      <svg class="bi bi-heart-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                          <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z" clip-rule="evenodd"/>
-                      </svg>
-                      {{ comment.likes }}
-                  </a>
-              </p>
+                <ul>
+                <tre-comment v-for="(child, index) in post.coments"
+                        class="item"
+                        :item="child"
+                ></tre-comment>
+                </ul>
               <form class="form-inline">
                 <div class="form-group">
                   <input type="text" class="form-control" id="addComment" v-model="commentText">
@@ -233,6 +259,9 @@ use Model\User_model;
               <div class="invalid-feedback" v-if="invalidSum">
                 Please write a sum.
               </div>
+            <div class="invalid-feedback" v-if="errors.sum">
+                {{errors.sum}}
+            </div>
             </div>
           </form>
         </div>
