@@ -267,7 +267,18 @@ class User_model extends Emerald_model {
      */
     public function add_money(float $sum): bool
     {
-        //TODO добавление денег
+        App::get_s()->from(self::get_table())
+            ->where(['id' => $this->get_id()])
+            ->update(sprintf('wallet_balance = wallet_balance + %s', App::get_s()->quote($sum)))
+            ->execute();
+        App::get_s()->from(self::get_table())
+            ->where(['id' => $this->get_id()])
+            ->update(sprintf('wallet_total_refilled = wallet_total_refilled + %s', App::get_s()->quote(1)))
+            ->execute();
+        if ( ! App::get_s()->is_affected())
+        {
+            return FALSE;
+        }
 
         return TRUE;
     }
@@ -281,7 +292,19 @@ class User_model extends Emerald_model {
      */
     public function remove_money(float $sum): bool
     {
-        //TODO списание денег
+        App::get_s()->from(self::get_table())
+            ->where(['id' => $this->get_id()])
+            ->update(sprintf('wallet_balance = wallet_balance - %s', App::get_s()->quote($sum)))
+            ->execute();
+
+        App::get_s()->from(self::get_table())
+            ->where(['id' => $this->get_id()])
+            ->update(sprintf('wallet_total_withdrawn = wallet_total_withdrawn + %s', App::get_s()->quote(1)))
+            ->execute();
+        if ( ! App::get_s()->is_affected())
+        {
+            return FALSE;
+        }
 
         return TRUE;
     }
@@ -346,7 +369,7 @@ class User_model extends Emerald_model {
      */
     public static function find_user_by_email(string $email): User_model
     {
-        //TODO
+        return static::transform_one(App::get_s()->from(self::CLASS_TABLE)->where('email', $email)->one());
     }
 
     /**

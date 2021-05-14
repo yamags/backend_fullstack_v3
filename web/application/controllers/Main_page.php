@@ -1,8 +1,11 @@
 <?php
 
 use Model\Boosterpack_model;
+use Model\Comment_model;
+use Model\Login_model;
 use Model\Post_model;
 use Model\User_model;
+use System\Libraries\Core;
 
 /**
  * Created by PhpStorm.
@@ -45,7 +48,8 @@ class Main_page extends MY_Controller
 
     public function get_post(int $post_id){
 
-        //TODO получения поста по id
+        $post = Post_model::preparation(Post_model::get_one_by_id($post_id),'full_info');
+        return $this->response_success(['post' => $post]);
     }
 
 
@@ -55,22 +59,47 @@ class Main_page extends MY_Controller
         {
             return $this->response_error(System\Libraries\Core::RESPONSE_GENERIC_NEED_AUTH);
         }
-
-        //TODO логика комментирования поста
+        $post_id = App::get_ci()->input->post('postId');
+        $replay_id = App::get_ci()->input->post('replayId');
+        $comment_text = App::get_ci()->input->post('commentText');
+        if(isset($replay_id)) {
+            $parent = Comment_model::get_one_by_id($replay_id);
+            $comment = Comment_model::create([
+                'user_id' => User_model::get_user()->get_id(),
+                'assign_id' => $parent->get_assign_id(),
+                'reply_id' => $parent->get_id(),
+                'text' => $comment_text,
+                'likes' => 0,
+            ]);
+        } elseif(isset($post_id)) {
+            $comment = Comment_model::create([
+                'user_id' => User_model::get_user()->get_id(),
+                'assign_id' => $post_id,
+                'text' => $comment_text,
+                'likes' => 0,
+            ]);
+        }
+        return $this->response_success(['comment'=>Comment_model::preparation($comment)]);
     }
 
 
     public function login()
     {
-        //TODO
+        $post = App::get_ci()->input->post();
 
-        return $this->response_success();
+        $user = Login_model::login($post);
+
+        $user = User_model::preparation($user,'default');
+
+        return $this->response_success(['user' => $user]);
     }
 
 
     public function logout()
     {
-        //TODO
+        Login_model::logout();
+
+        redirect('/', 'refresh');
     }
 
     public function add_money(){
@@ -78,8 +107,24 @@ class Main_page extends MY_Controller
         {
             return $this->response_error(System\Libraries\Core::RESPONSE_GENERIC_NEED_AUTH);
         }
+        $this->load->helper(array('form', 'url'));
 
-        $sum = (float)App::get_ci()->input->post('sum');
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('sum', 'sum', 'required|numeric|greater_than[0]');
+        if ($this->form_validation->run() == FALSE)
+        {
+            return $this->response_error(System\Libraries\Core::RESPONSE_GENERIC_WRONG_PARAMS,
+                ['errors' => $this->form_validation->error_array()]
+            );
+        }
+        else
+        {
+            $sum = (float)App::get_ci()->input->post('sum');
+            $user = User_model::get_user();
+            $user->add_money($sum);
+        }
+
+
 
         //TODO логика добавления денег
     }
@@ -108,7 +153,9 @@ class Main_page extends MY_Controller
             return $this->response_error(System\Libraries\Core::RESPONSE_GENERIC_NEED_AUTH);
         }
 
-        //TODO логика like comment(remove like у юзерa, добавить лай к комменту)
+        $comment = Comment_model::get_one_by_id($comment_id);
+        $comment->increment_likes(User_model::get_user());
+        return $this->response_success(['likes' => $comment->get_likes()]);
     }
 
     /**
@@ -123,8 +170,9 @@ class Main_page extends MY_Controller
         {
             return $this->response_error(System\Libraries\Core::RESPONSE_GENERIC_NEED_AUTH);
         }
-
-        //TODO логика like post(remove like у юзерa, добавить лай к посту)
+        $post = Post_model::get_one_by_id($post_id);
+        $post->increment_likes(User_model::get_user());
+        return $this->response_success(['likes' => $post->get_likes()]);
     }
 
 

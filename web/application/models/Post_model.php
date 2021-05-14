@@ -151,8 +151,9 @@ class Post_model extends Emerald_Model
      */
     public function get_comments():array
     {
-       //TODO
+       return Comment_model::get_all_by_assign_id($this->get_id());
     }
+
 
     /**
      * @return User_model
@@ -208,6 +209,16 @@ class Post_model extends Emerald_Model
     }
 
     /**
+     * @param $post_id
+     *
+     * @return Post_model
+     */
+    public static function get_one_by_id($post_id):Post_model
+    {
+        return static::transform_one(App::get_s()->from(self::CLASS_TABLE)->where('id', $post_id)->one());
+    }
+
+    /**
      * @param User_model $user
      *
      * @return bool
@@ -215,7 +226,8 @@ class Post_model extends Emerald_Model
      */
     public function increment_likes(User_model $user): bool
     {
-        //TODO
+        $this->likes += 1;
+        return $this->save('likes', $this->likes);
     }
 
 
@@ -273,7 +285,9 @@ class Post_model extends Emerald_Model
         $o->img = $data->get_img();
 
         $o->user = User_model::preparation($data->get_user(),'main_page');
-        $o->coments = Comment_model::preparation_many($data->get_comments(),'default');
+        $comments = Comment_model::preparation_many($data->get_comments(),'default');
+
+        $o->coments = self::build_tree($comments);
 
         $o->likes = $data->get_likes();
 
@@ -282,5 +296,21 @@ class Post_model extends Emerald_Model
         $o->time_updated = $data->get_time_updated();
 
         return $o;
+    }
+
+    private static function build_tree(array $comments, $parentId = null) {
+        $branch = array();
+
+        foreach ($comments as $comment) {
+            if ($comment->reply_id == $parentId) {
+                $children = self::build_tree($comments, $comment->id);
+                if ($children) {
+                    $comment->children = $children;
+                }
+                $branch[] = $comment;
+            }
+        }
+
+        return $branch;
     }
 }

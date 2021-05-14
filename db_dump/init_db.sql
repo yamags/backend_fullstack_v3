@@ -80,7 +80,7 @@ CREATE TABLE `boosterpack_info` (
 `boosterpack_id` int NOT NULL,
 `item_id` int NOT NULL,
 PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 
 -- --------------------------------------------------------
@@ -89,7 +89,7 @@ CREATE TABLE `items` (
  `name` varchar(20) NOT NULL,
  `price` int NOT NULL,
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4;
 
 
 INSERT INTO `items` (`id`, `name`, `price`) VALUES

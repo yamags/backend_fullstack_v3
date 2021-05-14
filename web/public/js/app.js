@@ -1,5 +1,61 @@
 const STATUS_SUCCESS = 'success';
 const STATUS_ERROR = 'error';
+
+Vue.component("tre-comment", {
+	template: "#comment-template",
+	props: {
+		item: Object,
+	},
+	data: function () {
+		return {
+			likes: 0,
+			replayForm: false,
+			commentText: ''
+		}
+	},
+	computed: {
+	},
+	methods: {
+		addLike: function (type, id) {
+			var self = this;
+			const url = '/main_page/like_' + type + '/' + id;
+			axios
+				.get(url)
+				.then(function (response) {
+					self.likes = response.data.likes;
+				})
+
+		},
+		enableReplayForm: function () {
+			var self = this;
+			self.replayForm = !self.replayForm
+		},
+		addComment: function(id) {
+			var self = this;
+			if(self.commentText) {
+
+				var comment = new FormData();
+				comment.append('replayId', self.item.id);
+				comment.append('commentText', self.commentText);
+
+				axios.post(
+					'/main_page/comment',
+					comment
+				).then(function (response) {
+					self.replayForm = false;
+					self.commentText = '';
+					if(self.item.children) {
+						self.item.children.push(response.data.comment);
+					} else {
+						self.item.children = [response.data.comment];
+					}
+				});
+			}
+
+		},
+	}
+});
+
 var app = new Vue({
 	el: '#app',
 	data: {
@@ -12,9 +68,11 @@ var app = new Vue({
 		posts: [],
 		addSum: 0,
 		amount: 0,
-		likes: 0,
+		post_likes: 0,
+		comment_likes: 0,
 		commentText: '',
 		boosterpacks: [],
+		errors: [],
 	},
 	computed: {
 		test: function () {
@@ -79,8 +137,14 @@ var app = new Vue({
 				axios.post(
 					'/main_page/comment',
 					comment
-				).then(function () {
-
+				).then(function (response) {
+					self.replayForm = false;
+					self.commentText = '';
+					if(self.post.coments) {
+						self.post.coments.push(response.data.comment);
+					} else {
+						self.post.coments = [response.data.comment];
+					}
 				});
 			}
 
@@ -96,9 +160,14 @@ var app = new Vue({
 				sum.append('sum', self.addSum);
 				axios.post('/main_page/add_money', sum)
 					.then(function (response) {
-						setTimeout(function () {
-							$('#addModal').modal('hide');
-						}, 500);
+						if(response.data.status === 'error') {
+							self.errors = response.data.errors
+						} else {
+							self.errors = []
+							setTimeout(function () {
+								$('#addModal').modal('hide');
+							}, 500);
+						}
 					})
 			}
 		},
@@ -121,7 +190,7 @@ var app = new Vue({
 			axios
 				.get(url)
 				.then(function (response) {
-					self.likes = response.data.likes;
+					self[type+'_likes'] = response.data.likes;
 				})
 
 		},
